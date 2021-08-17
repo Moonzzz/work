@@ -1,20 +1,26 @@
 package com.moon.work.design;
 
-import com.sun.tracing.dtrace.FunctionName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.EnumSource;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
  * 策略模式
+ *
  * @author pzz
  * @date 2021/8/3 13:08
  */
 public class StrategyTests {
 
     @Test
+    @EnumSource
     void run() throws InvocationTargetException, IllegalAccessException {
         StrategyTests instance = new StrategyTests();
         getMethod("fish").invoke(instance);
@@ -42,4 +48,11 @@ public class StrategyTests {
     public void method2() {
         System.out.println("i am bird");
     }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.METHOD})
+    public @interface FunctionName {
+        String value();
+    }
+
 }
