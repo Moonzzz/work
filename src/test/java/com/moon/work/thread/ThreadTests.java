@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author zhen.peng
@@ -20,7 +22,6 @@ public class ThreadTests {
         pool.submit(new MyTask(3));
         pool.submit(new MyTask(2));
 
-        Thread.sleep(5000);
         pool.shutdown();
         pool.awaitTermination(10,TimeUnit.SECONDS);
 
@@ -29,11 +30,12 @@ public class ThreadTests {
 
     static class MyTask implements Runnable {
         static TreeSet<Integer> currentOrder = new TreeSet<>();
-        static Semaphore semaphore = new Semaphore(1);
+        static Lock lock = new ReentrantLock();
+        static Condition IN = lock.newCondition();
 
         public MyTask(int order) {
             this.order = order;
-            this.runnable = ()->{
+            this.runnable = () -> {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -49,23 +51,27 @@ public class ThreadTests {
         @Override
         public void run() {
             put(order);
+            lock.lock();
             Integer first;
             do {
                 first = currentOrder.first();
-                try {
-                    semaphore.acquire();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                if (first != order) {
+                    try {
+                        IN.await();
+                        first = currentOrder.first();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-
             } while (first != order);
 
             this.runnable.run();
             currentOrder.remove(order);
-            semaphore.release();
+            IN.signalAll();
+            lock.unlock();
         }
 
-        synchronized void put(int order){
+        synchronized void put(int order) {
             currentOrder.add(order);
         }
     }
