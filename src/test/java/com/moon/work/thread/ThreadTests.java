@@ -24,8 +24,6 @@ public class ThreadTests {
 
         pool.shutdown();
         pool.awaitTermination(10,TimeUnit.SECONDS);
-
-
     }
 
     static class MyTask implements Runnable {
@@ -67,6 +65,7 @@ public class ThreadTests {
 
             this.runnable.run();
             currentOrder.remove(order);
+
             IN.signalAll();
             lock.unlock();
         }
